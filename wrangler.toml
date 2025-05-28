@@ -7,7 +7,7 @@ main               = "src/index.js"
 # D1 바인딩 (database_id를 반드시 지정)
 [[d1_databases]]
 binding        = "COINGECKO_DB"
-database_id    = "c1cb676c-7f7a-40c3-b271-cd007f65bfbc"  # ← 여기에 실제 D1 인스턴스 ID
+database_id    = "c1cb676c-7f7a-40c3-b271-cd007f65bfbc"
 database_name  = "my_coingecko_db"
 
 # R2 바인딩
