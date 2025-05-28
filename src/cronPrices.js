@@ -11,14 +11,13 @@ export async function handleCronPrices(request, env) {
         symbol TEXT,
         price_usd REAL,
         fetched_at TEXT
-      );
+      )
     `).run();
     // ───────────────────────────────────────────────────────
 
     // 1) CoinGecko API 호출
-    const apiUrl =
-      'https://api.coingecko.com/api/v3/simple/price' +
-      '?ids=bitcoin,ethereum&vs_currencies=usd';
+    const apiUrl = 'https://api.coingecko.com/api/v3/simple/price'
+      + '?ids=bitcoin,ethereum&vs_currencies=usd';
     const res = await fetch(apiUrl);
     if (!res.ok) {
       return errorResponse(`CoinGecko API error: ${res.status}`, 502);
