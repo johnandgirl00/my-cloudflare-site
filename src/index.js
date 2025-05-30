@@ -27,100 +27,149 @@ router.get('/', () => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>암호화폐 커뮤니티</title>
+  <title>CryptoGram - 암호화폐 커뮤니티</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f2f5; }
-    .chart-section {
-      height: 33vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      text-align: center;
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fafafa; }
+    
+    /* Container width control - 통일된 폭 */
+    .content-container {
+      max-width: 470px; /* Instagram-like narrow width */
+      margin: 0 auto;
     }
-    .chart-title { font-size: 2rem; margin-bottom: 0.5rem; }
-    .chart-subtitle { opacity: 0.9; font-size: 1rem; }
-    .community-section { height: 67vh; overflow-y: auto; background: #f0f2f5; }
-    .container { max-width: 600px; margin: 0 auto; padding: 1rem; }
-    .login-box {
-      background: white; padding: 2rem; border-radius: 12px; text-align: center; margin: 2rem 0;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+    @media (min-width: 768px) {
+      .content-container {
+        max-width: 614px; /* Instagram post width on desktop */
+      }
     }
-    .post-creator {
-      background: white; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    
+    /* Instagram style customizations */
+    .story-gradient {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      padding: 2px;
     }
-    .post-textarea {
-      width: 100%; border: none; resize: none; padding: 1rem; font-size: 16px; min-height: 80px;
-      border-radius: 8px; background: #f8f9fa; font-family: inherit;
+    
+    .hover-scale {
+      transition: transform 0.2s;
     }
-    .post-textarea:focus { outline: none; background: white; }
-    .post-card {
-      background: white; border-radius: 12px; margin-bottom: 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;
+    
+    .hover-scale:hover {
+      transform: scale(1.05);
     }
-    .post-header {
-      padding: 1rem; border-bottom: 1px solid #eee; display: flex; align-items: center;
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
     }
-    .user-avatar {
-      width: 40px; height: 40px; border-radius: 50%; background: #667eea;
-      display: flex; align-items: center; justify-content: center; color: white;
-      font-weight: bold; margin-right: 12px;
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
     }
-    .post-content { padding: 1rem; line-height: 1.5; }
-    .post-time { color: #666; font-size: 12px; }
-    .comments-section { border-top: 1px solid #eee; }
-    .comment { padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-    .comment:last-child { border-bottom: none; }
-    .comment-form { padding: 1rem; display: flex; gap: 0.5rem; }
-    .comment-input {
-      flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 0.5rem 1rem; font-size: 14px;
+    
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
     }
-    .comment-input:focus { outline: none; border-color: #667eea; }
-    .btn {
-      background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem;
-      border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
-      transition: background 0.2s;
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
     }
-    .btn:hover { background: #5a67d8; }
-    .btn-sm { padding: 0.5rem 1rem; font-size: 12px; }
-    .hidden { display: none; }
-    .loading { text-align: center; padding: 2rem; color: #666; }
+    
+    /* Input styling */
+    .post-input {
+      flex: 1;
+      border: 1px solid #dbdbdb;
+      border-radius: 22px;
+      padding: 0 16px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .post-input:focus {
+      border-color: #a8a8a8;
+    }
   </style>
 </head>
-<body>
-  <div class="chart-section">
-    <h1 class="chart-title">📈 Bitcoin Live Chart</h1>
-    <p class="chart-subtitle">실시간 암호화폐 차트와 커뮤니티</p>
-  </div>
-  
-  <div class="community-section">
-    <div class="container">
-      <div id="login-section" class="login-box">
-        <h2>🚀 크립토 커뮤니티 참여</h2>
-        <p style="margin: 1rem 0; color: #666;">간편 로그인으로 커뮤니티에 참여하세요</p>
-        <button class="btn" onclick="quickLogin()">🔐 빠른 로그인</button>
-      </div>
-      
-      <div id="community-main" class="hidden">
-        <div class="post-creator">
-          <textarea id="post-content" class="post-textarea" placeholder="암호화폐에 대한 생각을 공유해보세요... 🚀"></textarea>
-          <div style="text-align: right; margin-top: 0.5rem;">
-            <button class="btn" onclick="createPost()">포스트 작성</button>
-          </div>
+<body class="bg-gray-50">
+  <!-- Header/Navigation -->
+  <nav class="bg-white border-b border-gray-200 fixed top-0 w-full z-50">
+    <div class="content-container px-4">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-3">
+          <i class="fab fa-bitcoin text-2xl text-yellow-500"></i>
+          <h1 class="text-xl font-semibold">CryptoGram</h1>
         </div>
-        <div id="posts-container">
-          <div class="loading">포스트를 불러오는 중...</div>
+        <div class="flex items-center space-x-4">
+          <button onclick="quickLogin()" id="login-btn" class="text-sm bg-blue-500 text-white px-4 py-1.5 rounded-md hover:bg-blue-600 transition">
+            로그인
+          </button>
+          <div id="user-info" class="hidden flex items-center space-x-3">
+            <span id="username-display" class="text-sm font-medium"></span>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+              <span id="user-avatar-text"></span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  
+  </nav>
+
+  <!-- Main Content -->
+  <main class="pt-16">
+    <!-- Chart Section - 커뮤니티와 동일한 폭 -->
+    <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 py-4">
+      <div class="content-container px-4">
+        <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 text-white text-center">
+          <h2 class="text-2xl font-bold mb-2">📈 Bitcoin Live Chart</h2>
+          <p class="text-white text-opacity-90 text-sm">실시간 암호화폐 차트와 커뮤니티</p>
+          <div class="mt-4 bg-white bg-opacity-20 rounded-xl h-28 flex items-center justify-center">
+            <span class="text-white text-opacity-60 text-sm">차트 영역 (추후 구현)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Community Section -->
+    <div class="content-container px-4 py-6">
+      <!-- Create Post - 한 줄로 간소화 -->
+      <div id="post-creator" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-3 opacity-60 pointer-events-none">
+        <div class="flex items-center p-3 gap-2">
+          <input 
+            type="text"
+            id="post-content" 
+            class="post-input h-10"
+            placeholder="로그인 후 생각을 공유하세요..."
+            onkeypress="if(event.key==='Enter' && currentUser) { createPost(); }"
+          />
+          <button onclick="createPost()" class="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition">
+            게시
+          </button>
+        </div>
+      </div>
+
+      <!-- Posts Container - 간격 축소 -->
+      <div id="posts-container" class="space-y-3">
+        <div class="text-center py-8">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
+            <i class="fas fa-spinner fa-spin text-gray-400"></i>
+          </div>
+          <p class="text-gray-500">포스트를 불러오는 중...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script>
     let currentUser = null;
+    
+    // 페이지 로드 시 바로 포스트 불러오기
+    window.addEventListener('load', function() {
+      loadPosts();
+    });
     
     function quickLogin() {
       const username = prompt('사용자명을 입력하세요 (2-10자):');
@@ -128,16 +177,38 @@ router.get('/', () => {
         alert('2-10자 사이의 사용자명을 입력해주세요.');
         return;
       }
-      currentUser = { id: Date.now(), name: username, email: username + '@crypto.community' };
-      document.getElementById('login-section').classList.add('hidden');
-      document.getElementById('community-main').classList.remove('hidden');
-      loadPosts();
+      currentUser = { id: Date.now(), name: username };
+      
+      // UI 업데이트
+      document.getElementById('login-btn').classList.add('hidden');
+      document.getElementById('user-info').classList.remove('hidden');
+      document.getElementById('username-display').textContent = username;
+      document.getElementById('user-avatar-text').textContent = username.charAt(0).toUpperCase();
+      
+      // 포스트 작성 영역 활성화
+      const postCreator = document.getElementById('post-creator');
+      postCreator.classList.remove('opacity-60', 'pointer-events-none');
+      document.getElementById('post-content').placeholder = '무슨 생각을 하고 계신가요?';
+      
+      // 모든 댓글 입력란 활성화
+      updateCommentForms();
+    }
+    
+    function updateCommentForms() {
+      document.querySelectorAll('.comment-input').forEach(input => {
+        input.disabled = !currentUser;
+        input.placeholder = currentUser ? '댓글 달기...' : '로그인 후 댓글을 달 수 있습니다';
+      });
     }
     
     async function createPost() {
+      if (!currentUser) {
+        quickLogin();
+        return;
+      }
+      
       const content = document.getElementById('post-content').value.trim();
-      if (!content) { alert('포스트 내용을 입력해주세요.'); return; }
-      if (content.length > 500) { alert('포스트는 500자 이내로 작성해주세요.'); return; }
+      if (!content) return;
       
       try {
         const response = await fetch('/api/posts', {
@@ -148,8 +219,10 @@ router.get('/', () => {
         if (response.ok) {
           document.getElementById('post-content').value = '';
           loadPosts();
-        } else { throw new Error('포스트 작성 실패'); }
-      } catch (err) { alert('포스트 작성에 실패했습니다: ' + err.message); }
+        }
+      } catch (err) {
+        alert('포스트 작성에 실패했습니다.');
+      }
     }
     
     async function loadPosts() {
@@ -157,68 +230,149 @@ router.get('/', () => {
         const response = await fetch('/api/posts');
         const posts = await response.json();
         const container = document.getElementById('posts-container');
+        
         if (posts.length === 0) {
-          container.innerHTML = '<div class="loading">아직 포스트가 없습니다. 첫 번째 포스트를 작성해보세요! 🎉</div>';
+          container.innerHTML = \`
+            <div class="text-center py-12">
+              <i class="far fa-images text-6xl text-gray-300 mb-4"></i>
+              <p class="text-gray-500 mb-4">아직 게시물이 없습니다</p>
+              <button onclick="quickLogin()" class="text-blue-500 font-medium">첫 번째 게시물을 작성해보세요</button>
+            </div>
+          \`;
           return;
         }
+        
         container.innerHTML = posts.map(post => createPostHTML(post)).join('');
+        updateCommentForms();
       } catch (err) {
         console.error('포스트 로드 실패:', err);
-        document.getElementById('posts-container').innerHTML = 
-          '<div class="loading" style="color: red;">포스트를 불러오는데 실패했습니다.</div>';
       }
     }
     
     function createPostHTML(post) {
-      const timeAgo = new Date(post.created_at).toLocaleString('ko-KR');
-      const comments = Array.isArray(post.comments) ? post.comments : [];
+      const timeAgo = getTimeAgo(new Date(post.created_at));
+      const comments = post.comments || [];
+      
       return \`
-        <div class="post-card">
-          <div class="post-header">
-            <div class="user-avatar">\${post.user_name.charAt(0).toUpperCase()}</div>
-            <div>
-              <div style="font-weight: 500;">\${escapeHtml(post.user_name)}</div>
-              <div class="post-time">\${timeAgo}</div>
-            </div>
-          </div>
-          <div class="post-content">\${escapeHtml(post.content)}</div>
-          <div class="comments-section">
-            <div id="comments-\${post.id}">
-              \${comments.map(comment => \`
-                <div class="comment">
-                  <strong>\${escapeHtml(comment.user_name)}:</strong> \${escapeHtml(comment.content)}
+        <article class="bg-white rounded-lg shadow-sm border border-gray-200">
+          <!-- Post Header -->
+          <div class="flex items-center justify-between p-4">
+            <div class="flex items-center space-x-3">
+              <div class="story-gradient rounded-full p-0.5">
+                <div class="bg-white p-0.5 rounded-full">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                    \${escapeHtml(post.user_name.charAt(0).toUpperCase())}
+                  </div>
                 </div>
-              \`).join('')}
+              </div>
+              <div>
+                <p class="font-medium text-sm">\${escapeHtml(post.user_name)}</p>
+                <p class="text-xs text-gray-500">\${timeAgo}</p>
+              </div>
             </div>
-            <div class="comment-form">
-              <input type="text" class="comment-input" placeholder="댓글을 입력하세요..." maxlength="200"
-                onkeypress="if(event.key==='Enter') { addComment(\${post.id}, this.value); this.value=''; }">
-              <button class="btn btn-sm" onclick="const input = this.previousElementSibling; addComment(\${post.id}, input.value); input.value='';">댓글</button>
+            <button class="text-gray-400 hover:text-gray-600">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+          
+          <!-- Post Content -->
+          <div class="px-4 pb-3">
+            <p class="text-sm">\${escapeHtml(post.content)}</p>
+          </div>
+          
+          <!-- Post Actions -->
+          <div class="px-4 pb-2">
+            <div class="flex items-center space-x-4">
+              <button class="hover-scale">
+                <i class="far fa-heart text-2xl"></i>
+              </button>
+              <button class="hover-scale">
+                <i class="far fa-comment text-2xl"></i>
+              </button>
+              <button class="hover-scale">
+                <i class="far fa-paper-plane text-2xl"></i>
+              </button>
+              <button class="ml-auto hover-scale">
+                <i class="far fa-bookmark text-2xl"></i>
+              </button>
             </div>
           </div>
-        </div>
+          
+          <!-- Comments Section -->
+          <div class="border-t border-gray-100">
+            \${comments.length > 0 ? \`
+              <div class="px-4 py-2 space-y-1">
+                \${comments.map(comment => \`
+                  <div class="text-sm">
+                    <span class="font-medium">\${escapeHtml(comment.user_name)}</span>
+                    <span class="ml-1">\${escapeHtml(comment.content)}</span>
+                  </div>
+                \`).join('')}
+              </div>
+            \` : ''}
+            
+            <!-- Comment Form -->
+            <div class="flex items-center p-3 gap-2 border-t border-gray-100">
+              <input 
+                type="text" 
+                class="comment-input post-input h-9"
+                placeholder="\${currentUser ? '댓글 달기...' : '로그인 후 댓글을 달 수 있습니다'}"
+                \${currentUser ? '' : 'disabled'}
+                onkeypress="if(event.key==='Enter' && currentUser) { addComment(\${post.id}, this.value); this.value=''; }"
+              >
+              <button 
+                onclick="const input = this.previousElementSibling; if(currentUser && input.value) { addComment(\${post.id}, input.value); input.value=''; }"
+                class="text-blue-500 font-medium text-sm px-3 py-1.5 \${currentUser ? '' : 'opacity-50 cursor-not-allowed'}"
+                \${currentUser ? '' : 'disabled'}
+              >
+                게시
+              </button>
+            </div>
+          </div>
+        </article>
       \`;
     }
     
     async function addComment(postId, content) {
-      content = content.trim();
-      if (!content) return;
-      if (content.length > 200) { alert('댓글은 200자 이내로 작성해주세요.'); return; }
+      if (!currentUser || !content.trim()) return;
       
       try {
         const response = await fetch(\`/api/posts/\${postId}/comments\`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: content, user: currentUser })
+          body: JSON.stringify({ content: content.trim(), user: currentUser })
         });
-        if (response.ok) { loadPosts(); } else { throw new Error('댓글 작성 실패'); }
-      } catch (err) { alert('댓글 작성에 실패했습니다: ' + err.message); }
+        if (response.ok) {
+          loadPosts();
+        }
+      } catch (err) {
+        alert('댓글 작성에 실패했습니다.');
+      }
     }
     
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+    
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      const intervals = {
+        년: 31536000,
+        개월: 2592000,
+        일: 86400,
+        시간: 3600,
+        분: 60
+      };
+      
+      for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / secondsInUnit);
+        if (interval >= 1) {
+          return \`\${interval}\${unit} 전\`;
+        }
+      }
+      return '방금 전';
     }
   </script>
 </body>
