@@ -4,7 +4,7 @@ import { handleDataApi } from './dataApi.js';
 import { handleGenerateWebM } from './generateWebM.js';
 import { handleServeMedia } from './serveMedia.js';
 import { handleEmbedChart } from './embedChart.js';
-import { handleGetPosts, handleCreatePost, handleCreateComment } from './communityApi.js';
+import { handleGetPosts, handleCreatePost, handleCreateComment } from './communityApi_yesterday.js';
 
 const router = Router();
 
@@ -15,12 +15,12 @@ router.post('/api/generate-webm', (request, env, ctx) => handleGenerateWebM(requ
 router.get('/media/:key', (request, env, ctx) => handleServeMedia(request, env, ctx));
 router.get('/embed/chart.webm', (request, env, ctx) => handleEmbedChart(request, env, ctx));
 
-// 새로운 커뮤니티 API들
+// 커뮤니티 API들
 router.get('/api/posts', (request, env, ctx) => handleGetPosts(request, env, ctx));
 router.post('/api/posts', (request, env, ctx) => handleCreatePost(request, env, ctx));
 router.post('/api/posts/:id/comments', (request, env, ctx) => handleCreateComment(request, env, ctx));
 
-// 메인 페이지 - 차트 + 커뮤니티
+// 메인 페이지 - 차트 + Instagram 스타일 커뮤니티
 router.get('/', () => {
   const html = `<!DOCTYPE html>
 <html lang="ko">
@@ -92,6 +92,32 @@ router.get('/', () => {
     .post-input:focus {
       border-color: #a8a8a8;
     }
+    
+    /* Chart section styling */
+    .chart-container {
+      width: 100%;
+      height: 200px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      overflow: hidden;
+    }
+    
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+    }
+    
+    .chart-placeholder {
+      color: white;
+      text-align: center;
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -120,14 +146,18 @@ router.get('/', () => {
 
   <!-- Main Content -->
   <main class="pt-16">
-    <!-- Chart Section - 커뮤니티와 동일한 폭 -->
+    <!-- Chart Section - 실제 차트 -->
     <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 py-4">
       <div class="content-container px-4">
         <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 text-white text-center">
           <h2 class="text-2xl font-bold mb-2">📈 Bitcoin Live Chart</h2>
           <p class="text-white text-opacity-90 text-sm">실시간 암호화폐 차트와 커뮤니티</p>
-          <div class="mt-4 bg-white bg-opacity-20 rounded-xl h-28 flex items-center justify-center">
-            <span class="text-white text-opacity-60 text-sm">차트 영역 (추후 구현)</span>
+          <div class="mt-4">
+            <div class="chart-container">
+              <div id="chart-content" class="chart-placeholder">
+                📊 차트 로딩 중...
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -166,10 +196,32 @@ router.get('/', () => {
   <script>
     let currentUser = null;
     
-    // 페이지 로드 시 바로 포스트 불러오기
+    // 페이지 로드 시 차트와 포스트 불러오기
     window.addEventListener('load', function() {
+      loadChart();
       loadPosts();
     });
+    
+    // 차트 로드 함수 - 실제 차트 표시
+    async function loadChart() {
+      try {
+        const chartContent = document.getElementById('chart-content');
+        chartContent.innerHTML = \`
+          <object data="/embed/chart.webm" 
+                  type="image/svg+xml" 
+                  width="100%" 
+                  height="100%" 
+                  class="chart-svg">
+            <div class="chart-placeholder">
+              📊 차트를 로드할 수 없습니다
+            </div>
+          </object>
+        \`;
+      } catch (err) {
+        console.error('차트 로드 실패:', err);
+        document.getElementById('chart-content').innerHTML = '<div class="chart-placeholder">📊 차트 로드 실패</div>';
+      }
+    }
     
     function quickLogin() {
       const username = prompt('사용자명을 입력하세요 (2-10자):');
