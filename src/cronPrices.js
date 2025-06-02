@@ -1,113 +1,143 @@
-// src/cronPrices.js
-import { errorResponse, jsonResponse } from './utils.js';
-
-export async function handleCronPrices(request, env) {
+export async function handleCronPrices(request, env, ctx) {
   try {
-    console.log('🚀 Starting cron job for price collection...');
+    console.log('Starting CoinGecko API fetch...');
     
-    // ─── 테이블이 없다면 생성 ───────────────────────────────
-    try {
-      await env.COINGECKO_DB.prepare(`
-        CREATE TABLE IF NOT EXISTS coin_prices (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          coin_id TEXT NOT NULL,
-          symbol TEXT NOT NULL,
-          price_usd REAL NOT NULL,
-          fetched_at TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    const db = env.COINGECKO_DB;
+    
+    // coin_market_data 테이블이 존재하는지 확인하고 생성
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS coin_market_data (
+        id TEXT PRIMARY KEY,
+        symbol TEXT NOT NULL,
+        name TEXT NOT NULL,
+        image TEXT,
+        current_price REAL,
+        market_cap REAL,
+        market_cap_rank INTEGER,
+        total_volume REAL,
+        high_24h REAL,
+        low_24h REAL,
+        price_change_percentage_24h REAL,
+        circulating_supply REAL,
+        max_supply REAL,
+        ath REAL,
+        atl REAL,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+    
+    // CoinGecko API에서 상위 100개 코인 데이터 가져오기
+    const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&locale=en', {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'CryptoGram/1.0'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const coinsData = await response.json();
+    console.log(`Fetched ${coinsData.length} coins from CoinGecko`);
+    
+    // 배치로 데이터 삽입
+    const insertStmt = db.prepare(`
+      INSERT OR REPLACE INTO coin_market_data (
+        id, symbol, name, image, current_price, market_cap, market_cap_rank,
+        total_volume, high_24h, low_24h, price_change_percentage_24h,
+        circulating_supply, max_supply, ath, atl, last_updated
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `);
+    
+    let insertedCount = 0;
+    const sampleData = [];
+    
+    for (const coin of coinsData) {
+      try {
+        await insertStmt.bind(
+          coin.id,
+          coin.symbol,
+          coin.name,
+          coin.image,
+          coin.current_price,
+          coin.market_cap,
+          coin.market_cap_rank,
+          coin.total_volume,
+          coin.high_24h,
+          coin.low_24h,
+          coin.price_change_percentage_24h,
+          coin.circulating_supply,
+          coin.max_supply,
+          coin.ath,
+          coin.atl
+        ).run();
+        
+        insertedCount++;
+        
+        // 상위 5개 코인 데이터를 응답에 포함
+        if (insertedCount <= 5) {
+          sampleData.push({
+            id: coin.id,
+            symbol: coin.symbol,
+            name: coin.name,
+            current_price: coin.current_price,
+            market_cap_rank: coin.market_cap_rank,
+            price_change_percentage_24h: coin.price_change_percentage_24h
+          });
+        }
+      } catch (insertError) {
+        console.error(`Error inserting ${coin.id}:`, insertError);
+      }
+    }
+    
+    // 기존 호환성을 위해 prices 테이블도 업데이트 (Bitcoin, Ethereum만)
+    const btcData = coinsData.find(coin => coin.id === 'bitcoin');
+    const ethData = coinsData.find(coin => coin.id === 'ethereum');
+    
+    if (btcData || ethData) {
+      await db.prepare(`
+        CREATE TABLE IF NOT EXISTS prices (
+          symbol TEXT PRIMARY KEY,
+          price REAL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `).run();
-      console.log('✅ Table creation/check completed');
       
-      // 인덱스 생성 (검색 성능 향상)
-      await env.COINGECKO_DB.prepare(`
-        CREATE INDEX IF NOT EXISTS idx_coin_id_fetched_at 
-        ON coin_prices(coin_id, fetched_at)
-      `).run();
-      console.log('✅ Index creation/check completed');
-    } catch (dbError) {
-      console.error('❌ Database setup error:', dbError);
-      return errorResponse(`Database setup failed: ${dbError.message}`, 500);
-    }
-    // ───────────────────────────────────────────────────────
-
-    // 1) CoinGecko API 호출 시도
-    console.log('📡 Fetching data from CoinGecko API...');
-    const apiUrl = 'https://api.coingecko.com/api/v3/simple/price'
-      + '?ids=bitcoin,ethereum&vs_currencies=usd';
-    
-    let data;
-    
-    try {
-      const res = await fetch(apiUrl);
-      if (res.ok) {
-        data = await res.json();
-        console.log('✅ API data received:', data);
-      } else {
-        throw new Error(`API Error: ${res.status}`);
-      }
-    } catch (apiError) {
-      console.log('⚠️ CoinGecko API failed, using test data:', apiError.message);
-      
-      // 테스트 데이터 사용 (실제와 비슷한 가격)
-      data = {
-        bitcoin: { usd: 65000 + Math.random() * 5000 },
-        ethereum: { usd: 3000 + Math.random() * 500 }
-      };
-      console.log('🧪 Using test data:', data);
-    }
-    
-    // 데이터 검증
-    if (!data || typeof data !== 'object') {
-      return errorResponse('No valid data available', 502);
-    }
-    
-    const symbolMap = {
-      'bitcoin': 'BTC',
-      'ethereum': 'ETH'
-    };
-    
-    // 2) D1에 데이터 삽입 (개별 실행으로 변경)
-    const db = env.COINGECKO_DB;
-    const now = new Date().toISOString();
-    
-    let insertCount = 0;
-    const insertedCoins = [];
-    
-    for (const [coinId, info] of Object.entries(data)) {
-      if (!info || typeof info.usd !== 'number' || info.usd <= 0) {
-        console.warn(`Invalid price data for ${coinId}:`, info);
-        continue;
+      if (btcData) {
+        await db.prepare(
+          'INSERT OR REPLACE INTO prices (symbol, price, timestamp) VALUES (?, ?, datetime("now"))'
+        ).bind('bitcoin', btcData.current_price).run();
       }
       
-      try {
-        const symbol = symbolMap[coinId] || coinId.toUpperCase();
-        await db.prepare(`
-          INSERT INTO coin_prices (coin_id, symbol, price_usd, fetched_at)
-          VALUES (?, ?, ?, ?)
-        `).bind(coinId, symbol, info.usd, now).run();
-        
-        insertCount++;
-        insertedCoins.push(coinId);
-        console.log(`✅ Inserted ${coinId}: $${info.usd}`);
-      } catch (insertErr) {
-        console.error(`❌ Failed to insert ${coinId}:`, insertErr.message);
+      if (ethData) {
+        await db.prepare(
+          'INSERT OR REPLACE INTO prices (symbol, price, timestamp) VALUES (?, ?, datetime("now"))'
+        ).bind('ethereum', ethData.current_price).run();
       }
     }
     
-    if (insertCount === 0) {
-      return errorResponse('No data was successfully inserted', 400);
-    }
-    
-    console.log(`Successfully inserted ${insertCount} price records at ${now}`);
-    return jsonResponse({ 
-      result: '✅ Inserted prices into D1',
-      count: insertCount,
-      timestamp: now,
-      coins: insertedCoins
+    return new Response(JSON.stringify({
+      success: true,
+      message: `Successfully updated ${insertedCount} coins from CoinGecko API`,
+      data: {
+        inserted_count: insertedCount,
+        sample_coins: sampleData,
+        timestamp: new Date().toISOString()
+      }
+    }), {
+      headers: { 'Content-Type': 'application/json' }
     });
-  } catch (err) {
-    console.error('Error in handleCronPrices:', err);
-    return errorResponse(err.stack || err.toString(), 500);
+    
+  } catch (error) {
+    console.error('Cron error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
