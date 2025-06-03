@@ -7,15 +7,14 @@
 -- ====================================
 
 -- Drop old tables that we don't need anymore
--- 주의: 이미 테이블이 존재하고 데이터가 있다면 이 부분을 주석처리해야 합니다
--- DROP TABLE IF EXISTS coin_prices;
--- DROP TABLE IF EXISTS posts;
--- DROP TABLE IF EXISTS comments;
--- DROP TABLE IF EXISTS prices;
+/* DROP TABLE IF EXISTS coin_prices;
+DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS prices;
 
 -- Drop any old triggers
--- DROP TRIGGER IF EXISTS update_comments_count_insert;
--- DROP TRIGGER IF EXISTS update_comments_count_delete;
+DROP TRIGGER IF EXISTS update_comments_count_insert;
+DROP TRIGGER IF EXISTS update_comments_count_delete;*/
 
 -- ====================================
 -- CREATE NEW TABLES
