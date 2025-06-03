@@ -28,6 +28,21 @@
     <img id="result-img" alt="Uploaded Chart">
   </div>
 
+  <!-- 게시글 작성 섹션 -->
+  <div style="margin-top: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;">
+    <h3>게시글 작성</h3>
+    <textarea id="post-content" placeholder="게시글 내용을 입력하세요..." style="width: 100%; height: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+    <br><br>
+    <button onclick="createPost()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">게시글 작성</button>
+    <div id="post-result" style="margin-top: 1rem; padding: 8px; border-radius: 4px; display: none;"></div>
+  </div>
+
+  <!-- 게시글 목록 섹션 -->
+  <div style="margin-top: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;">
+    <h3>최근 게시글</h3>
+    <div id="posts-list"></div>
+  </div>
+
   <script>
   (async () => {
     // 1) D1에서 JSON 데이터 받아오기
@@ -81,6 +96,79 @@
     // 6) 업로드된 차트 이미지 표시
     document.getElementById('result-img').src = url;
   })();
+
+  // 게시글 작성 함수
+  async function createPost() {
+    const content = document.getElementById('post-content').value.trim();
+    const resultDiv = document.getElementById('post-result');
+    
+    if (!content) {
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = '#f8d7da';
+      resultDiv.style.color = '#721c24';
+      resultDiv.innerHTML = '게시글 내용을 입력해주세요.';
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/posts/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: content,
+          user: { id: 2 } // 테스트용 사용자 ID
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#d4edda';
+        resultDiv.style.color = '#155724';
+        resultDiv.innerHTML = `✅ 게시글이 성공적으로 작성되었습니다! (ID: ${result.data.post_id})`;
+        document.getElementById('post-content').value = '';
+        loadPosts(); // 게시글 목록 새로고침
+      } else {
+        throw new Error(result.error || '게시글 작성에 실패했습니다.');
+      }
+    } catch (error) {
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = '#f8d7da';
+      resultDiv.style.color = '#721c24';
+      resultDiv.innerHTML = `❌ 오류: ${error.message}`;
+    }
+  }
+
+  // 게시글 목록 로드 함수
+  async function loadPosts() {
+    try {
+      const response = await fetch('/api/posts/list');
+      const result = await response.json();
+      
+      if (result.success) {
+        const postsDiv = document.getElementById('posts-list');
+        if (result.data && result.data.length > 0) {
+          postsDiv.innerHTML = result.data.map(post => `
+            <div style="padding: 8px; margin: 8px 0; border: 1px solid #eee; border-radius: 4px;">
+              <strong>${post.author_name || 'Anonymous'}</strong>
+              <span style="color: #666; font-size: 0.9em;">${new Date(post.created_at).toLocaleString()}</span>
+              <p>${post.content}</p>
+            </div>
+          `).join('');
+        } else {
+          postsDiv.innerHTML = '<p>게시글이 없습니다.</p>';
+        }
+      }
+    } catch (error) {
+      document.getElementById('posts-list').innerHTML = '<p>게시글 로드 중 오류가 발생했습니다.</p>';
+    }
+  }
+
+  // 페이지 로드 시 게시글 목록 로드
+  loadPosts();
   </script>
 </body>
 </html>
