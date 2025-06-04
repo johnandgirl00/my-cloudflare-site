@@ -1,9 +1,16 @@
 import { Router } from 'itty-router';
 import { handleCronPrices } from './cronPrices.js';
-import { handleDataApi } from './dataApi.js';
-import { handleGenerateWebM } from './generateWebM.js';
-import { handleServeMedia } from './serveMedia.js';
-import { handleEmbedChart } from './embedChart.js';
+import { handleDataApi } from './handlers/dataApi.js';
+import { handleGenerateWebM } from './charts/generateWebM.js';
+import { handleServeMedia } from './handlers/serveMedia.js';
+import { handleEmbedChart } from './charts/embedChart.js';
+
+// Discord 마케팅 시스템 imports
+import { handleDiscordJoin, getDiscordJoinStats } from './api/discord/join.js';
+import { handleDiscordFeedback, getFeedbackAnalytics } from './api/discord/feedback.js';
+import { hourlyPersonaPoster } from './bots/scheduler/hourlyPersonaPoster.js';
+import { handleBotDashboard } from './api/dashboard.js';
+import { handleSystemHealth } from './api/health.js';
 
 // 새로운 모듈형 API imports
 import { handleCoinsFetch } from './api/coins/fetch.js';
@@ -27,7 +34,7 @@ const router = Router();
 router.get('/cron/prices', (request, env, ctx) => handleCronPrices(request, env, ctx));
 router.get('/api/data', (request, env, ctx) => handleDataApi(request, env, ctx)); // 통합된 데이터 API
 
-// 커뮤니티 API들 (새로운 모듈형 구조 사용)
+// 커뮤니티 API 라우트들
 router.get('/api/posts', (request, env, ctx) => handlePostsList(request, env, ctx));
 router.post('/api/posts', (request, env, ctx) => handlePostsCreate(request, env, ctx));
 router.post('/api/posts/:id/comments', (request, env, ctx) => {
@@ -52,7 +59,6 @@ router.post('/api/posts/:id/comments', (request, env, ctx) => {
 });
 
 // 새로운 모듈형 API 라우트들
-// Coins API
 router.get('/api/coins/fetch', (request, env, ctx) => handleCoinsFetch(request, env, ctx));
 router.post('/api/coins/save', (request, env, ctx) => handleCoinsSave(request, env, ctx));
 router.get('/api/coins/list', (request, env, ctx) => handleCoinsList(request, env, ctx));
@@ -134,6 +140,248 @@ router.get('/admin', () => {
   return new Response(html, { headers: { 'Content-Type': 'text/html; charset=UTF-8' } });
 });
 
+// Discord 마케팅 시스템 대시보드
+router.get('/marketing', () => {
+  const html = `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>암호화폐 마켓 데이터 & Discord 마케팅 시스템</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .api-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .api-item { background: #f9f9f9; padding: 15px; border-radius: 5px; }
+        .method { font-weight: bold; color: #007cba; }
+        .endpoint { font-family: monospace; background: #e1f5fe; padding: 3px 6px; border-radius: 3px; }
+        .stats { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 암호화폐 마켓 데이터 & Discord 마케팅 시스템</h1>
+        
+        <div class="section">
+            <h2>📊 시스템 현황</h2>
+            <div class="stats">
+                <p><strong>상태:</strong> 운영 중 ✅</p>
+                <p><strong>자동화:</strong> 매시간 데이터 수집 및 페르소나 포스팅 실행 중</p>
+                <p><strong>Discord 통합:</strong> 활성화됨</p>
+                <p><strong>AI 페르소나:</strong> 5개 활성 페르소나</p>
+                <p><strong>새로운 기능:</strong> 에러 로깅, 참여도 분석, 개선된 페르소나 선택</p>
+                <p><strong>🏘️ 커뮤니티 사이트:</strong> <a href="/" target="_blank" style="color: #007cba; text-decoration: none;">CryptoGram 커뮤니티 방문하기 →</a></p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚀 주요 기능</h2>
+            <div class="api-grid">
+                <div class="api-item">
+                    <h3>🤖 AI 페르소나 시스템</h3>
+                    <ul>
+                        <li>개선된 페르소나 선택 알고리즘</li>
+                        <li>참여도 기반 성과 측정</li>
+                        <li>다양성 보장을 위한 스마트 스케줄링</li>
+                        <li>실시간 활동 모니터링</li>
+                    </ul>
+                </div>
+                
+                <div class="api-item">
+                    <h3>📈 분석 및 모니터링</h3>
+                    <ul>
+                        <li>실시간 참여도 분석</li>
+                        <li>포스트 성과 추적</li>
+                        <li>에러 로깅 및 알림</li>
+                        <li>시스템 건강성 모니터링</li>
+                    </ul>
+                </div>
+                
+                <div class="api-item">
+                    <h3>🔧 관리 도구</h3>
+                    <ul>
+                        <li><a href="/dashboard" target="_blank">📊 실시간 대시보드</a></li>
+                        <li><a href="/api/health" target="_blank">🏥 시스템 상태</a></li>
+                        <li><a href="/api/discord/analytics" target="_blank">📈 참여도 분석</a></li>
+                        <li><a href="/api/discord/stats" target="_blank">📊 Discord 통계</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔗 API 엔드포인트</h2>
+            <div class="api-grid">
+                <div class="api-item">
+                    <h3>암호화폐 데이터</h3>
+                    <ul>
+                        <li><span class="method">GET</span> <span class="endpoint">/api/coins/fetch</span> - 최신 시장 데이터 가져오기</li>
+                        <li><span class="method">POST</span> <span class="endpoint">/api/coins/save</span> - 데이터베이스에 저장</li>
+                        <li><span class="method">GET</span> <span class="endpoint">/api/coins/list</span> - 코인 목록 조회</li>
+                        <li><span class="method">GET</span> <span class="endpoint">/api/coins/chart</span> - 차트 데이터</li>
+                    </ul>
+                </div>
+                
+                <div class="api-item">
+                    <h3>Discord 마케팅</h3>
+                    <ul>
+                        <li><span class="method">POST</span> <span class="endpoint">/api/discord/join</span> - 사용자 참여 추적</li>
+                        <li><span class="method">GET</span> <span class="endpoint">/api/discord/stats</span> - Discord 통계</li>
+                        <li><span class="method">POST</span> <span class="endpoint">/api/discord/feedback</span> - 사용자 피드백 수집</li>
+                        <li><span class="method">GET</span> <span class="endpoint">/api/discord/analytics</span> - 참여도 분석</li>
+                    </ul>
+                </div>
+                
+                <div class="api-item">
+                    <h3>커뮤니티 기능</h3>
+                    <ul>
+                        <li><span class="method">GET/POST</span> <span class="endpoint">/api/posts/*</span> - 게시글 관리</li>
+                        <li><span class="method">GET/POST</span> <span class="endpoint">/api/comments/*</span> - 댓글 관리</li>
+                        <li><span class="method">GET/POST</span> <span class="endpoint">/api/users/*</span> - 사용자 관리</li>
+                        <li><span class="method">GET/POST</span> <span class="endpoint">/api/media/*</span> - 미디어 관리</li>
+                    </ul>
+                </div>
+                
+                <div class="api-item">
+                    <h3>차트 & 시각화</h3>
+                    <ul>
+                        <li><span class="method">GET</span> <span class="endpoint">/chart/embed</span> - 임베드 차트</li>
+                        <li><span class="method">GET</span> <span class="endpoint">/generate-webm</span> - WebM 차트 생성</li>
+                        <li><span class="method">GET</span> <span class="endpoint">/media/*</span> - 미디어 파일 서빙</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🧪 테스트 도구</h2>
+            <div class="api-grid">
+                <div class="api-item">
+                    <h3>기본 테스트</h3>
+                    <ul>
+                        <li><a href="/test/cron-prices" target="_blank">💰 암호화폐 데이터 수집 테스트</a></li>
+                        <li><a href="/test/persona-post" target="_blank">🤖 페르소나 포스팅 테스트</a></li>
+                        <li><a href="/test/discord-webhook" target="_blank">📢 Discord 웹훅 테스트</a></li>
+                    </ul>
+                </div>
+                
+                <div class="api-item">
+                    <h3>고급 테스트</h3>
+                    <ul>
+                        <li><a href="/test/persona-selection" target="_blank">🎯 페르소나 선택 알고리즘 테스트</a></li>
+                        <li><a href="/test/error-logging" target="_blank">📝 에러 로깅 시스템 테스트</a></li>
+                        <li><a href="/api/health" target="_blank">🏥 시스템 건강 상태 확인</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📈 실시간 예시</h2>
+            <p>Bitcoin 차트 예시: <a href="/api/coins/chart?coin=bitcoin" target="_blank">/api/coins/chart?coin=bitcoin</a></p>
+            <p>Discord 통계: <a href="/api/discord/stats" target="_blank">/api/discord/stats</a></p>
+            <p>참여도 분석: <a href="/api/discord/analytics" target="_blank">/api/discord/analytics</a></p>
+        </div>
+    </div>
+</body>
+</html>`;
+  
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html' }
+  });
+});
+
+// Discord 마케팅 API 라우트들
+router.post('/api/discord/join', handleDiscordJoin);
+router.get('/api/discord/stats', async (request, env) => {
+  const stats = await getDiscordJoinStats(env);
+  return new Response(JSON.stringify(stats), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+});
+
+router.post('/api/discord/feedback', handleDiscordFeedback);
+router.get('/api/discord/analytics', async (request, env) => {
+  const url = new URL(request.url);
+  const days = parseInt(url.searchParams.get('days')) || 7;
+  const analytics = await getFeedbackAnalytics(env, days);
+  return new Response(JSON.stringify(analytics), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+});
+
+// 고급 대시보드
+router.get('/dashboard', handleBotDashboard);
+router.get('/api/health', handleSystemHealth);
+
+// 테스트 엔드포인트들
+router.get('/test/cron-prices', async (request, env) => {
+  console.log('🧪 Manual test: Running crypto price collection...');
+  const result = await handleCronPrices(null, env, null);
+  return new Response(JSON.stringify(result, null, 2), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+});
+
+router.get('/test/persona-post', async (request, env) => {
+  console.log('🧪 Manual test: Running persona posting...');
+  const result = await hourlyPersonaPoster(env);
+  return new Response(JSON.stringify(result, null, 2), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+});
+
+router.get('/test/discord-webhook', async (request, env) => {
+  console.log('🧪 Manual test: Testing Discord webhook...');
+  try {
+    const testMessage = {
+      username: 'Test Bot',
+      avatar_url: 'https://ui-avatars.com/api/?name=Test&background=4caf50',
+      content: '🧪 Discord 웹훅 테스트 메시지입니다!\n\n현재 시간: ' + new Date().toLocaleString('ko-KR') + '\n\n🔗 시스템이 정상 작동 중입니다!'
+    };
+    
+    const response = await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testMessage)
+    });
+    
+    if (response.ok) {
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Discord webhook test successful!',
+        status: response.status,
+        timestamp: new Date().toISOString()
+      }, null, 2), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } else {
+      const errorText = await response.text();
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Discord webhook failed',
+        status: response.status,
+        details: errorText
+      }, null, 2), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 500
+      });
+    }
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
+    });
+  }
+});
+
 // 메인 페이지 - Instagram 스타일 커뮤니티
 router.get('/', () => {
   const html = '<!DOCTYPE html>' +
@@ -148,7 +396,6 @@ router.get('/', () => {
     '* { margin: 0; padding: 0; box-sizing: border-box; }' +
     'body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; }' +
     '.content-container { max-width: 470px; margin: 0 auto; }' +
-    '@media (min-width: 768px) { .content-container { max-width: 614px; } }' +
     '.story-gradient { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 2px; }' +
     '.hover-scale { transition: transform 0.2s; }' +
     '.hover-scale:hover { transform: scale(1.05); }' +
@@ -166,6 +413,7 @@ router.get('/', () => {
     '</div>' +
     '<div class="flex items-center space-x-4">' +
     '<a href="/admin" class="text-xs text-gray-400 hover:text-gray-600">관리자</a>' +
+    '<a href="/marketing" class="text-xs text-gray-400 hover:text-gray-600">마케팅</a>' +
     '<button onclick="quickLogin()" id="login-btn" class="text-sm bg-blue-500 text-white px-4 py-1.5 rounded-md hover:bg-blue-600 transition">로그인</button>' +
     '<div id="user-info" class="hidden flex items-center space-x-3">' +
     '<span id="username-display" class="text-sm font-medium"></span>' +
@@ -219,7 +467,7 @@ router.get('/', () => {
     'alert("2-10자 사이의 사용자명을 입력해주세요.");' +
     'return;' +
     '}' +
-    'currentUser = { id: Date.now(), name: username };' +
+    'currentUser = { id: Date.now(), name: username, email: username + "@crypto.community" };' +
     'document.getElementById("login-btn").classList.add("hidden");' +
     'document.getElementById("user-info").classList.remove("hidden");' +
     'document.getElementById("username-display").textContent = username;' +
@@ -232,21 +480,14 @@ router.get('/', () => {
     'function updateCommentForms() {' +
     'document.querySelectorAll(".comment-input").forEach(input => {' +
     'input.disabled = !currentUser;' +
-    'input.placeholder = currentUser ? "댓글 달기..." : "로그인 후 댓글을 달 수 있습니다";' +
-    '});' +
-    'document.querySelectorAll("button[onclick*=\\"addComment\\"]").forEach(button => {' +
-    'button.disabled = !currentUser;' +
-    'if (currentUser) {' +
-    'button.classList.remove("opacity-50", "cursor-not-allowed");' +
-    '} else {' +
-    'button.classList.add("opacity-50", "cursor-not-allowed");' +
-    '}' +
+    'input.placeholder = currentUser ? "댓글 쓰기..." : "로그인해야 댓글을 쓸 수 있습니다";' +
     '});' +
     '}' +
     'async function createPost() {' +
     'if (!currentUser) { quickLogin(); return; }' +
     'const content = document.getElementById("post-content").value.trim();' +
-    'if (!content) return;' +
+    'if (!content) { alert("내용을 입력하세요."); return; }' +
+    'if (content.length > 500) { alert("게시글은 500자를 초과할 수 없습니다."); return; }' +
     'try {' +
     'const response = await fetch("/api/posts", {' +
     'method: "POST",' +
@@ -386,6 +627,27 @@ export default {
   },
   
   async scheduled(event, env, ctx) {
-    await handleCronPrices(null, env, ctx);
+    console.log('🔥 Scheduled event triggered:', event.cron);
+    
+    switch (event.cron) {
+      case '0 * * * *': // 매시간 정각 (암호화폐 가격 수집)
+        console.log('Running hourly crypto price collection...');
+        await handleCronPrices(null, env, ctx);
+        break;
+        
+      case '15 * * * *': // 매시간 15분 (페르소나 포스팅)
+        console.log('Running hourly persona posting...');
+        try {
+          const { hourlyPersonaPoster } = await import('./bots/scheduler/hourlyPersonaPoster.js');
+          const result = await hourlyPersonaPoster(env);
+          console.log('Persona posting result:', result);
+        } catch (error) {
+          console.error('Error in persona posting:', error);
+        }
+        break;
+        
+      default:
+        console.log('Unknown cron pattern:', event.cron);
+    }
   }
 };

@@ -10,7 +10,7 @@ command = ""
 
 # D1 바인딩
 [[d1_databases]]
-binding        = "COINGECKO_DB"
+binding        = "MY_COINGECKO_DB"
 database_id    = "c1cb676c-7f7a-40c3-b271-cd007f65bfbc"
 database_name  = "my_coingecko_db"
 
@@ -20,4 +20,22 @@ binding     = "CHARTS"
 bucket_name = "my-chart-bucket"
 
 [triggers]
-crons = ["0 * * * *"]
+crons = [
+  "0 * * * *",   # 매시간 정각 - 암호화폐 가격 수집
+  "15 * * * *"   # 매시간 15분 - 페르소나 자동 포스팅
+]
+
+# 환경 변수 (시크릿)
+[vars]
+WORKER_DOMAIN = "my-cloudflare-site.johnandgirl.workers.dev"
+# 서브도메인 라우팅 설정
+COMMUNITY_SUBDOMAINS = "community,comm,cryptogram"
+
+# 시크릿 변수 (wrangler secret put 명령어로 설정 필요)
+# OPENAI_API_KEY = "sk-..."
+# DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/..."
+
+# 라우팅 설정 (커스텀 도메인 사용 시)
+# [[routes]]
+# pattern = "*.yourdomain.com/*"
+# zone_name = "yourdomain.com"

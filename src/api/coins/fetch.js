@@ -1,39 +1,15 @@
-// CoinGecko API에서 데이터를 가져오는 핸들러
-export async function handleCoinsFetch(request, env, ctx) {
+// Fetch cryptocurrency data from CoinGecko API
+export async function handleCoinsFetch(request, env) {
   try {
-    console.log('Starting CoinGecko API fetch...');
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,polygon,chainlink&vs_currencies=usd&include_24hr_change=true&include_market_cap=true');
+    const data = await response.json();
     
-    // CoinGecko API에서 상위 100개 코인 데이터 가져오기
-    const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&locale=en', {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'CryptoGram/1.0'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`CoinGecko API error: ${response.status}`);
-    }
-
-    const coins = await response.json();
-    console.log(`Fetched ${coins.length} coins from CoinGecko`);
-
-    return new Response(JSON.stringify({
-      success: true,
-      data: coins,
-      count: coins.length,
-      timestamp: new Date().toISOString()
-    }), {
+    return new Response(JSON.stringify(data), {
       headers: { 'Content-Type': 'application/json' }
     });
-
   } catch (error) {
-    console.error('Error fetching from CoinGecko:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString()
-    }), {
+    console.error('Fetch error:', error);
+    return new Response(JSON.stringify({ error: 'Failed to fetch data' }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
